@@ -1,0 +1,452 @@
+createdAt: "2018-09-19T19:47:12.280Z"
+updatedAt: "2018-09-19T19:47:28.463Z"
+type: "MARKDOWN_NOTE"
+folder: "655c5e8ccab45e8e53a1"
+title: "Using ImmutableJS in React - Redux Applications"
+content: '''
+  # Using ImmutableJS in React - Redux Applications
+  
+  [](https://scotch.io/@emabishi)[Elizabeth Mabishi](https://scotch.io/@emabishi) [(@emabishi)](https://twitter.com/emabishi)
+  
+  August 29, 2017 [2 Comments](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#comments) 8,300 Views
+  
+  ![Using ImmutableJS in React - Redux Applications](https://scotch-res.cloudinary.com/image/upload/dpr_1,w_1050,q_auto:good,f_auto/media/1/b0toJ6yRRnm4iowvYheR_immutable-js-in-react-redux.png.jpg)
+  
+  [Code](https://github.com/andela-emabishi/immutable-redux)
+  
+  [#javascript 417](https://scotch.io/tag/javascript)
+  
+  [#node.js 189](https://scotch.io/tag/node%20js)
+  
+  [#react 86](https://scotch.io/tag/react)
+  
+  [Beginner's course to:  
+  **Get Started with Vue.js**  
+  
+  Get Started](https://scotch.io/courses/getting-started-with-vue) 
+  
+  [![](https://scotch-res.cloudinary.com/image/upload/v1537315869/910x200_t9ocsu.png)](https://bit.ly/2NVYQqj) 
+  
+  In this guide, we'll briefly discuss the concept of immutability in software development and how to leverage its benefits when developing React-Redux applications.
+  
+  Specifically, we'll demonstrate how to use Facebook's [Immutable.js](https://facebook.github.io/immutable-js/) library to enforce immutability in our applications.
+  
+  ![Immutable.js Site](https://scotch-res.cloudinary.com/image/upload/dpr_1,w_800,q_auto:good,f_auto/media/1/P3E4P1uxSXuere68ZB48_Y2oFIvA.png)
+  
+  ## [Redux and Immutability](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-redux-and-immutability)
+  
+  In the React ecosystem, [Redux](http://redux.js.org/), a state management paradigm, is fast becoming the preferred implementation of Facebook's [Flux](https://facebook.github.io/flux/) architecture.
+  
+  freestar.queue.push(function () { googletag.display('Scotch.io_InContent_1'); });
+  
+  One of Redux's core [tenets](http://redux.js.org/docs/introduction/ThreePrinciples.html) is maintaining state immutability to ensure state determinism, unlock performace gains and enable time travel debugging capability.
+  
+  You probably have one question now though.
+  
+  ### What is immutability?
+  
+  An immutable object is one whose state cannot be modified once created. Enforcing immutability means ensuring that once objects are created, they cannot be modified.
+  
+  ## [What is ImmutableJS?](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-what-is-immutablejs-)
+  
+  [Immutable.js](https://facebook.github.io/immutable-js/) is a library that provides us with several immutable data structures, making it easier to implement immutability within our applications.
+  
+  Any changes to data created using these data structures returns a new object that is the result of the changes.
+  
+  Immutable.js presents an API which does not update the data in-place, but instead always yields new updated data.
+  
+  Other than the benefit of not having to worry about accidentally mutating the state of our application directly, Immutable.js data structures are highly performant because of the library's implementation of [structural sharing](https://medium.com/@dtinth/immutable-js-persistent-data-structures-and-structural-sharing-6d163fbd73d2) through hash maps and vector tries.
+  
+  If you'd like to read about how it does this, I've posted a few handy references in the reference section of this article.
+  
+  Before we dig deep into using Immutable.js with Redux, let's look at immutability in general in JavaScript.
+  
+  ## [What we'll be Building](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-what-we-ll-be-building)
+  
+  In order to demonstrate implementing Immutable.js in a Redux application, we'll be building the Redux layer of a reviews application, where we can:
+  
+  1.  **Add reviews** for an item.
+  2.  **Delete reviews** for an item.
+  3.  **Flag reviews** made by other reviewers, we'll have this as a _boolean_.
+  4.  **Rate reviews** made by other reviewers _on a scale of 1-5_.
+  
+  To show the differences between using Immutable and native Node.js methods, we'll write out the purely Node version of our reducer and then modify our reducer so that it uses Immutable.js.
+  
+  All in all, our goal is to make our state object immutable. Therefore, all modifications made to our application state should return a new modified object, leaving the previous state unchanged.
+  
+  As is the pattern with Redux, our reducer will return a new state object dependent on the action it receives.
+  
+  ## [Object Immutability in JavaScript](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-object-immutability-in-javascript)
+  
+  Natively, objects are mutable in JavaScript. However, if we're careful enough, we can implement some immutability. Amongst other methods, we can use the following:
+  
+  1.  [The spread operator](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Operators/Spread_operator): The `...` operator can be used to transform the properties of an object and returns a new object which is the result of the mutation.
+  2.  [Object.assign](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign): `Object.assign(target, ...sources)`. This method is used to copy the values of all enumerable own properties from one or more source objects to a target object.
+  3.  Other non-mutating array methods like [filter](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/filter), [concat](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/concat) and [slice](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/slice).
+  
+  ## [Redux reducer model](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-redux-reducer-model)
+  
+  As a reminder, before we begin to write out our reducers, our reducers will emulate the standard redux reducer pattern below.
+  
+  ![redux-reducer](https://scotch-res.cloudinary.com/image/upload/dpr_1,w_800,q_auto:good,f_auto/media/8976/CTugR05ZS76ih9G5TgVb_Redux%20Flow%20Sketch.png)
+  
+  ## [Reviews reducer without Immutable.js](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-reviews-reducer-without-immutable-js)
+  
+  First, let's use the methods we mentioned above to quickly bootstrap a reviews reducer for our application without Immutable.
+  
+      const reviews = (state=[], action) => {
+        switch (action.type) {
+          case 'ADD_REVIEW':
+            return [
+              ...state, {
+                id: action.id,
+                reviewer: action.reviewer,
+                text: action.text,
+                rating: action.rating,
+                flag: false
+              }
+            ]
+          case 'DELETE_REVIEW':
+            return state.filter(review => review.id !== action.id);
+          case 'FLAG_REVIEW':
+            return state.map(review => review.id === action.id ? Object.assign({}, review, { flag: action.flag}): review)
+          case 'RATE_REVIEW':
+            return state.map(review => review.id === action.id ? {...review, rating: action.rating }: review)
+          default:
+            return state;
+        }
+      }
+  
+  ### ADD REVIEW
+  
+  Here, we use the spread operator to copy the existing state and append to it a new review object. We could easily just have used the array concat or any other array manipulation method that returns a new array object.
+  
+  To demonstrate how easy it is to accidentally mutate state directly, instead of using the spread operator, let's use `push` to append the new review object to our state object.
+  
+        // code as before
+        case 'ADD_REVIEW':
+          return state.push(
+            {
+                id: action.id,
+                reviewer: action.reviewer,
+                text: action.text,
+                rating: action.rating,
+                flag: false
+              }
+          )
+          // as after 
+  
+  Since `push` directly alters the original array, when a review is added into state, previous information about the shape of the state object before the addition will be lost to us.
+  
+  ### DELETE REVIEW
+  
+  Filter creates a new state array with the elements in the original array that pass the conditional in the callback function we pass it. Here, the condition is `review.id !== action.id`,
+  
+  If the review id in state matches the action id passed, then that review is omitted from the resultant array.
+  
+  ### FLAG REVIEW
+  
+  We map over all existing reviews and look for one with an id that matches the specified action.id. Once we've found it, we use Object.assign to create a copy of that review with its flag property changed to the one given in the action.
+  
+  ### RATE REVIEW
+  
+  Again, we map over all reviews and when we find one whose id is equivalent to the action.id, we create a copy of it using the object spread operator and change its `rating` property to the one specified in the action.
+  
+  The methods we've used make it quick and easy to implement state immutability in our application. So why would we look to anything else to help us enforce immutability?
+  
+  I wondered that too myself, so fortunately, you're not alone. Before we answer that question though, let's discuss some considerations we'll have to make before we use Immutable.js.
+  
+  ## [Costs vs Benefits of using Immutable.js](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-costs-vs-benefits-of-using-immutable-js)
+  
+  As always, before we attempt to integrate a library into an application, especially one as pervasive and far reaching as this one, let's weigh the cost versus the benefit of using Immutable.js.
+  
+  ### Benefits
+  
+  1.  As previously discussed, Immutable helps us enforce immutability from the start, eliminating the possibility of inadvertent state mutation.
+  2.  Immutable improves state/object copy performance significantly through its implementation of structural sharing.
+  
+  ### Costs
+  
+  1.  Immutable.js is a library and thus requires installation. If we're using Node's inbuilt non mutating object methods, we don't need to perform any installation.
+  2.  Since Immutable has its own syntax for performing read and write object operations, referencing Immutable.js data becomes slightly tedious.
+  3.  The above reason makes it cumbersome to integrate with projects that expect plain JavaScript objects. Granted, Immutable eases conversion of its immutable data structures to plain JS objects with the method `toJS()`, but it's slow and leads to performance losses.
+  4.  Converting an Immutable.js object to JavaScript using `toJS()` will return a new object every time. If the method is used in Redux's `mapStateToProps()` it will cause React to believe that the whole state object has changed every time even if only part of the state tree changes, causing a re-render of the whole component and negating any performance gains due to React's shallow equality checking.
+  5.  Since all state is wrapped with Immutable.js and objects have to be accessed using Immutable.js syntax, this dependency may spread to your components. Such a high level of coupling would make removing Immutable.js from your codebase difficult in the future.
+  6.  Immutable.js objects may prove difficult to debug since the actual data is nested within a hierarchy of properties. However, this can be resolved using the [ImmutableJS object formatter](https://chrome.google.com/webstore/detail/immutablejs-object-format/hgldghadipiblonfkkicmgcbbijnpeog?hl=en) in Chrome Dev Tools.
+  
+  ## [Prerequisites](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-prerequisites)
+  
+  Before we get started, there are a few libraries we need to install. First, let's create a `package.json` at the root of our project by running the command
+  
+      npm init
+  
+  Install our dependencies by executing,
+  
+      npm install --save immutable 
+      npm install --save-dev babel-cli babel-preset-es2015-node6 babel-preset-stage-3 babel-register mocha chai
+  
+  Let's modify the **.babelrc** to include the following:
+  
+  **.babelrc**
+  
+      {
+        "presets": [
+          "es2015-node6",
+          "stage-3"
+        ]
+      }
+  
+  ## [Project Structure](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-project-structure)
+  
+  Now that you have a pretty comprehensive picture of what you might need to consider before using Immutable.js, let's build our application.
+  
+  We'll be using the following directory structure, so go ahead and create it. You can use the following command if you're using a Unix kernel.
+  
+      mkdir -p immutable-redux/src/reducers immutable-redux/test
+  
+      touch immutable-redux/.babelrc immutable-redux/src/{actionTypes.js,reducers/reviews.js} immutable-redux/test/reviews_test.js
+  
+      ├── immutable-redux
+          ├── .babelrc
+          ├── package.json
+          ├── src
+          │   ├── actionTypes.js
+          │   └── reducers
+          │        └── reviews.js
+          └── test
+              └── reviews_test.js
+  
+  ## [Test Driven Development](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-test-driven-development)
+  
+  We'll be taking a tests first approach with our application, so before we begin writing out the reviews reducer, let's create tests for it. This approach will help us understand what our reducer should do.
+  
+  Gratefully, Redux reducers are pure functions so this makes them pretty straightforward to test.
+  
+  Our initial state will be an empty array and our actions of the form { type, id, item_id, reviewer, text, rating, flag }. As before, we'll use a switch-case statement to execute certain behaviour when our action types are triggered.
+  
+  For our testing assertion library we're using [chai](http://chaijs.com/) along with [mocha](https://mochajs.org/).
+  
+  To start, fill out the following in the **test/reviews_test.js** file.
+  
+  **test/reviews_test.js**
+  
+      import { expect } from 'chai';
+      import { List, Map } from 'Immutable';
+  
+      import reviews from '../src/reducers/reviews'; // This file will hold our reviews reducer
+  
+      describe('ImmutableJS Review reducer tests', () => {
+        const state = List([
+          { id: 1, item_id: '200', reviewer: 'Bombadill', text: 'It needs a song really', rating: 4, flag: false },
+          { id: 2, item_id: '200', reviewer: 'Strider', text: `That's not what happened!`, rating: 3, flag: false },
+          { id: 3, item_id: '200', reviewer: 'Gollum', text: `Preciousss`, rating: 1, flag: true },
+        ]);
+  
+        describe('ADD_REVIEW TESTS', () => {
+          const action = {
+            type: 'ADD_REVIEW',
+            id: 4,
+            item_id: '200',
+            reviewer: 'Gandalf',
+            text: 'Not all those who wander are lost.',
+            rating: 4,
+            flag: false
+          };
+          it('Should return a new state object when adding a review', () => {
+            expect(state.size).to.equal(3);
+          });
+  
+          it('Should append the added review object to the new state object', () => {
+            const newState = reviews(state, action);
+            expect(reviews(state, action).size).to.equal(4);
+          });
+        });
+  
+        describe('DELETE_REVIEW TESTS', () => {
+          const action = { type: 'DELETE_REVIEW', id: 3, item_id: '200' };
+          it('Should return a new state object when deleting a review', () => {
+            expect(state.size).to.equal(3);
+          });
+  
+          it('Should return a state object without the deleted review', () => {
+            const newState = reviews(state,action);
+            expect(reviews(state, action).size).to.equal(2);
+            expect(newState.indexOf({ id: 3, item_id: '200', reviewer: 'Gollum', text: `Preciousss`, rating: 1, flag: true })).to.equal(-1);
+          });
+        });
+  
+        describe('FLAG_REVIEW TESTS', () => {
+          const action = { type: 'FLAG_REVIEW', id: 2, item_id: '200', flag: true };
+          const newState = reviews(state, action);
+          it('Should return a new state object', () => {
+            expect(newState).not.to.equal(state);
+          });
+          it('Should return a state object with the specified review/'s flag property changed', () => {
+            expect(newState.get(1).flag).to.equal(true);
+          });
+        });
+  
+        describe('RATE_REVIEW TESTS', () => {
+          const action = { type: 'RATE_REVIEW', id: 1, item_id: '200', rating: 5 }
+          const newState = reviews(state, action);
+          it('Should return a new state object', () => {
+            expect(newState).to.not.equal(state); // will assert that objects are not in the same slice of memeory
+          });
+          it('Should return a state object with the specified review with the correct rating', () => {
+            expect(newState.get(0).rating).to.equal(5);
+          });
+        });
+      });
+  
+  One of the things you'll notice is that we're not referring directly to values in our state object using dot or bracket notation. We now use [get](https://facebook.github.io/immutable-js/docs/#/List/get) to access values from our state [List](https://scotch.io/tutorials/(https://facebook.github.io/immutable-js/docs/#/List)) object.
+  
+  Also, to compute the length of our immutable [Lists](https://facebook.github.io/immutable-js/docs/#/List), we use [size](https://facebook.github.io/immutable-js/docs/#/List/size) and not [length](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/length) as we would have done.
+  
+  These two changes sum up the extent of any modifications we have to make to our test syntax. All in all, that was relatively painless.
+  
+  ## [Running our tests](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-running-our-tests)
+  
+  Since we don't have any code to run them against, our tests should fail. Let's confirm that they do.
+  
+  Edit your **package.json** file to add this.
+  
+  **package.json**
+  
+        "scripts": {
+          "test": "mocha --compilers js:babel-core/register"
+        }
+  
+  This gets [babel](https://babeljs.io/docs/usage/babel-register/) to transpile our code on the fly before mocha runs our tests.
+  
+  Now, we're ready to fail forward. Execute,
+  
+      npm test
+  
+  Expect the following
+  
+      npm ERR! Test failed.  See above for more details.
+  
+  Take heart! Our failure is only temporary. We'll soon be in the green.
+  
+  ## [Reviews reducer with Immutable.js](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-reviews-reducer-with-immutable-js)
+  
+  Now that we have our reducer tests, let's finally write out our reducer.
+  
+  First, we define our action types.
+  
+  **src/actionTypes.js**
+  
+      const types = {
+        reviews: {
+          ADD_REVIEW: 'ADD_REVIEW',
+          DELETE_REVIEW: 'DELETE_REVIEW',
+          FLAG_REVIEW : 'FLAG_REVIEW',
+          RATE_REVIEW: 'RATE_REVIEW'
+        }
+      }
+  
+      export default types;
+  
+  Finally, our reducer.
+  
+  **src/reducers/reviews.js**
+  
+      import { List, Map } from 'Immutable';
+      import types from '../../actionTypes';
+  
+      const reviews = (state=List(), action) => {
+        switch (action.type) {
+          case types.reviews.ADD_REVIEW:
+            const newReview = Map(
+              { id: action.id,
+                item_id: action.item_id,
+                reviewer: action.reviewer,
+                text: action.text,
+                rating: action.rating,
+                flag: false
+              }
+            )
+            return state.push(newReview);  // Note that Immutable's push will return a new array
+          case types.reviews.DELETE_REVIEW:
+            return state.filter(review => review.id !== action.id);
+          case types.reviews.FLAG_REVIEW:
+            return state.map(review => review.id === action.id ? Object.assign({}, review, { flag: action.flag}): review)
+          case types.reviews.RATE_REVIEW:
+            return state.map(review => review.id === action.id ? {...review, rating: action.rating }: review)
+          default:
+            return state;
+        }
+      }
+  
+      export default reviews;
+  
+  ## [Modifications made to the reducer](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-modifications-made-to-the-reducer)
+  
+  How has our reviews reducer changed? Actually, not by much.
+  
+  1.  Instead of having an empty array as our initial state, we now have an empty Immutable.js List.
+  2.  Newly created reviews aren't JavaScript objects anymore but Immutable.js [Maps](https://facebook.github.io/immutable-js/docs/#/Map).
+  3.  In the place of the spread operator, we [push](https://facebook.github.io/immutable-js/docs/#/List/push) a new review into the state object. The Immutable [Push](https://facebook.github.io/immutable-js/docs/#/List/push) unlike the native Node [push](https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/push) will return a new state object.
+  
+  Let's make sure everything's running as it should by running `npm test` at the root of our project again. We expect our tests to pass.
+  
+      8 passing (74ms)
+  
+  There you go.
+  
+  ## [Conclusion](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-conclusion)
+  
+  If you've stuck with me till now, congratulations! Our state object is now immutable by default.
+  
+  We'll soon implement a view layer and the Redux store for our application, but we're off to a good start. You have a head start so go ahead. I'm excited to hear and see what you'll build with your newly acquired skills.
+  
+  All the code we've written can be found [here](https://github.com/andela-emabishi/immutable-redux). For comparison, I've written out the purely Node versions of our reducer [tests](https://github.com/andela-emabishi/immutable-redux/blob/master/test/reviews_test.js) and [reducer](https://github.com/andela-emabishi/immutable-redux/blob/master/src/reducers/es5/reviews.js) without immutable.
+  
+  As always, I'd love your feedback on the article. Don't be shy, drop me a line in the comment box below.
+  
+  ## [References](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications#toc-references)
+  
+  If you're interested in learning more about Immutable.js, here are a few links to follow.
+  
+  *   [redux.js.org](http://redux.js.org/docs/recipes/UsingImmutableJS.html)
+  *   [Persistent data structures and structural sharing](https://medium.com/@dtinth/immutable-js-persistent-data-structures-and-structural-sharing-6d163fbd73d2)
+  *   [Is it worth the price?](https://medium.com/@AlexFaunt/immutablejs-worth-the-price-66391b8742d4)
+  *   [Using immutable data in JavaScript](http://jlongster.com/Using-Immutable-Data-Structures-in-JavaScript)
+  
+  [![](https://scotch-res.cloudinary.com/image/upload/dpr_1,dpr_1,w_200,q_auto:good,f_auto,c_fill,g_face/media/8976/jUrkCl60SHyDDl4C75nR_emabishi%20headshot.jpg)](https://scotch.io/@emabishi) 
+  
+  ### [Elizabeth Mabishi](https://scotch.io/@emabishi)
+  
+  [Follow @emabishi](https://twitter.com/intent/follow?screen_name=emabishi)
+  
+  Programmer, Gamer, Powerlifter, Bodybuilder, Movement and Martial arts enthusiast.
+  
+  [View My 5 Posts](https://scotch.io/@emabishi)
+  
+  [![](https://scotch-res.cloudinary.com/image/upload/v1537315869/300x120_bnj4nf.png)](https://bit.ly/2NpIiYf) 
+  
+  [![](https://scotch-res.cloudinary.com/image/upload/v1537063129/zdhyo6hzp8wlmfkn56f9.png) ](https://synd.co/2NPR0yE) [![](https://scotch-res.cloudinary.com/image/upload/v1537315869/300x200_2_wvkswj.png)](https://bit.ly/2xva3Uw) 
+  
+  [![](https://scotch-res.cloudinary.com/image/upload/dpr_1,w_200,q_auto:good,f_auto,c_fill,g_face/media/8976/jUrkCl60SHyDDl4C75nR_emabishi%20headshot.jpg)](https://scotch.io/@emabishi) 
+  
+  ### [Elizabeth Mabishi](https://scotch.io/@emabishi)
+  
+  [Follow @emabishi](https://twitter.com/intent/follow?screen_name=emabishi)
+  
+  Programmer, Gamer, Powerlifter, Bodybuilder, Movement and Martial arts enthusiast.
+  
+  [](https://scotch.io/@emabishi "Profile")[](https://twitter.com/emabishi "Twitter @emabishi")[](https://github.com/emabishi "GitHub")[](https://instagram.com/emabishi "Instagram")
+  
+  [View My 5 Posts](https://scotch.io/@emabishi)
+  
+  [](https://scotch.io/tutorials/using-immutablejs-in-react-redux-applications "Using ImmutableJS in React - Redux Applications")
+'''
+tags: [
+  "immutable"
+  "react"
+  "javascript"
+  "tutorial"
+  "redux"
+]
+isStarred: false
+isTrashed: false

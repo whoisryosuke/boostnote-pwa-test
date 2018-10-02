@@ -1,0 +1,17 @@
+.App {
+  font-family: sans-serif;
+}
+
+#MarkdownEditor {
+  width: 100% !important;
+}
+
+.LivePreview img,
+.LivePreview code,
+.LivePreview pre {
+  max-width: 100%;
+}
+
+.LivePreview pre {
+  overflow-x: auto;
+}
